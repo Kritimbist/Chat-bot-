@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Krishi chatbot</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="chat-wrapper">
+    <div class="chat-container">
+      <header class="chat-header">
+        <h2>Smart Krishi chatbot 🤖</h2>
+      </header>
+
+      <div class="chat-box" id="chat-box">
+        <div class="bot-message">Hello! How can I assist you today?</div>
+      </div>
+
+      <form class="chat-input-area" id="chat-form">
+        <input type="text" id="user-input" placeholder="Type your message..." required />
+        <button type="submit">
+          <span>➤</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("user-input");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      appendMessage(userMessage, "user");
+      input.value = "";
+      showTypingAnimation();
+
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer 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",
+            "X-Title": "Smart Chatbot",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-r1:free",
+            messages: [
+              { role: "user", content: userMessage }
+            ]
+          })
+        });
+
+        const data = await response.json();
+        const botReply = data.choices?.[0]?.message?.content || "Sorry, I couldn’t understand that.";
+        removeTypingAnimation();
+        appendMessage(botReply, "bot");
+      } catch (error) {
+        removeTypingAnimation();
+        appendMessage("⚠️ Error connecting to the API.", "bot");
+        console.error(error);
+      }
+    });
+
+    function appendMessage(text, sender) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add(sender === "user" ? "user-message" : "bot-message");
+      msgDiv.textContent = text;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTypingAnimation() {
+      const typingDiv = document.createElement("div");
+      typingDiv.classList.add("bot-message", "typing");
+      typingDiv.innerHTML = '<span></span><span></span><span></span>';
+      chatBox.appendChild(typingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTypingAnimation() {
+      const typingDiv = document.querySelector(".typing");
+      if (typingDiv) typingDiv.remove();
+    }
+  </script>
+</body>
+</html>
